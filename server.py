@@ -1,12 +1,11 @@
 from flask import Flask, jsonify
 import requests
 from bs4 import BeautifulSoup
-import pandas as pd
 import os
 
 app = Flask(__name__)
 
-# 企業名から IR ページ URL を自動取得
+# 企業名から IR ページ URL を取得
 def find_ir_url(company_name):
     query = f"{company_name} IR 投資家情報"
     url = f"https://www.bing.com/search?q={query}"
@@ -22,14 +21,12 @@ def find_ir_url(company_name):
 
     return None
 
-
 # IR ページから最新 IR 情報を取得
 def fetch_latest_ir(ir_url):
     try:
         res = requests.get(ir_url, timeout=10)
         soup = BeautifulSoup(res.text, "html.parser")
 
-        # よくある IR ページの構造
         link = soup.select_one("a[href*='pdf'], a[href*='IR'], a[href*='news'], a[href*='release']")
         if link:
             return {
@@ -41,35 +38,28 @@ def fetch_latest_ir(ir_url):
 
     return None
 
-
-# /ir/latest のメイン処理
 @app.route("/ir/latest")
 def latest_ir():
-    df = pd.read_csv("nikkei225.csv", encoding="utf-8")
+    company_name = "トヨタ自動車"  # まずは1社だけ
+    ir_url = find_ir_url(company_name)
 
-    results = []
+    if not ir_url:
+        return jsonify({"error": "IRページが見つかりませんでした"})
 
-    for _, row in df.iterrows():
-        ir_url = find_ir_url(row["name"])
-        if not ir_url:
-            continue
+    info = fetch_latest_ir(ir_url)
 
-        info = fetch_latest_ir(ir_url)
-        if info:
-            results.append({
-                "code": row["code"],
-                "name": row["name"],
-                "title": info["title"],
-                "url": info["url"]
-            })
+    if not info:
+        return jsonify({"error": "IR情報が取得できませんでした"})
 
-    return jsonify(results)
-
+    return jsonify({
+        "company": company_name,
+        "title": info["title"],
+        "url": info["url"]
+    })
 
 @app.route("/")
 def home():
     return "Nikkei225 IR server is running"
-
 
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))
