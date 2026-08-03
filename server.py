@@ -6,7 +6,7 @@ app = Flask(__name__)
 
 # TDnetの最新IRを取得する関数
 def crawl_tdnet():
-    url = "https://www.release.tdnet.info/inbs/I_list_00.html?sort=1"
+    url = "https://www.release.tdnet.info/inbs/I_list_00.html?sort=1&display=1"
 
     try:
         res = requests.get(url, timeout=10)
@@ -38,7 +38,6 @@ def crawl_tdnet():
         })
 
     return ir_list
-
 
 
 @app.route("/ir/latest")
