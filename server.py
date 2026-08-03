@@ -1,12 +1,13 @@
 from flask import Flask, jsonify
 import requests
-from bs4 import BeautifulSoup
 import os
 
 app = Flask(__name__)
 
 # 企業名から IR ページ URL を取得
 def find_ir_url(company_name):
+    from bs4 import BeautifulSoup  # ← 関数内に移動
+
     query = f"{company_name} IR 投資家情報"
     url = f"https://www.bing.com/search?q={query}"
 
@@ -23,6 +24,8 @@ def find_ir_url(company_name):
 
 # IR ページから最新 IR 情報を取得
 def fetch_latest_ir(ir_url):
+    from bs4 import BeautifulSoup  # ← 関数内に移動
+
     try:
         res = requests.get(ir_url, timeout=10)
         soup = BeautifulSoup(res.text, "html.parser")
@@ -52,7 +55,7 @@ def fetch_latest_ir(ir_url):
 
 @app.route("/ir/latest")
 def latest_ir():
-    company_name = "トヨタ自動車"  # まずは1社だけで動作確認
+    company_name = "トヨタ自動車"
     ir_url = find_ir_url(company_name)
 
     if not ir_url:
@@ -76,3 +79,4 @@ def home():
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))
     app.run(host="0.0.0.0", port=port)
+
