@@ -6,7 +6,7 @@ app = Flask(__name__)
 
 # TDnetの最新IRを取得する関数
 def crawl_tdnet():
-    url = "https://www.release.tdnet.info/inbs/I_list_00.html"
+    url = "https://www.release.tdnet.info/inbs/I_list_00.html?sort=1"
 
     try:
         res = requests.get(url, timeout=10)
@@ -16,7 +16,6 @@ def crawl_tdnet():
 
     soup = BeautifulSoup(res.text, "html.parser")
 
-    # 実際のIR一覧テーブルを取得
     rows = soup.select("table tr")
 
     ir_list = []
