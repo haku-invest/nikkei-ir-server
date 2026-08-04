@@ -6,28 +6,26 @@ import os
 
 app = Flask(__name__)
 
-# 企業のIRページURL（まずはトヨタだけ）
+# トヨタの正しいIRページ（PDFリンクが正しく解決される）
 IR_URLS = {
     "7203": {
         "name": "トヨタ自動車",
-        "ir_url": "https://global.toyota/en/ir/"
+        "ir_url": "https://global.toyota/en/ir/library/"
     }
 }
 
-# IRページから最新IR情報を取得
 def fetch_latest_ir(ir_url):
     try:
         res = requests.get(ir_url, timeout=10)
         soup = BeautifulSoup(res.text, "html.parser")
 
-        # PDFリンクを広く探索
         link = soup.select_one(
             "a[href$='.pdf'], a[href*='pdf'], a[href*='news'], a[href*='release']"
         )
 
         if link:
             href = link.get("href")
-            absolute_url = urljoin(ir_url, href)  # ← これが絶対URLに変換する
+            absolute_url = urljoin(ir_url, href)
             return {
                 "title": link.text.strip(),
                 "url": absolute_url
