@@ -58,3 +58,22 @@ def home():
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))
     app.run(host="0.0.0.0", port=port)
+
+from urllib.parse import urljoin
+
+def fetch_latest_ir(ir_url):
+    try:
+        res = requests.get(ir_url, timeout=10)
+        soup = BeautifulSoup(res.text, "html.parser")
+
+        link = soup.select_one("a[href$='.pdf'], a[href*='pdf'], a[href*='news'], a[href*='release']")
+        if link:
+            href = link.get("href")
+            absolute_url = urljoin(ir_url, href)
+            return {
+                "title": link.text.strip(),
+                "url": absolute_url
+            }
+    except:
+        pass
+    return None
