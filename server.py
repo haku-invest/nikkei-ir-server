@@ -1,64 +1,29 @@
-from flask import Flask, jsonify
+import pandas as pd
 import requests
 from bs4 import BeautifulSoup
-from urllib.parse import urljoin
-import os
 
-app = Flask(__name__)
+def find_ir_url(company_name):
+    query = f"{company_name} IR 投資家情報 公式"
+    url = f"https://www.bing.com/search?q={query}"
 
-# トヨタの正しいIRページ（PDFリンクが正しく解決される）
-IR_URLS = {
-    "7203": {
-        "name": "トヨタ自動車",
-        "ir_url": "https://global.toyota/en/ir/library/"
-    }
-}
-
-def fetch_latest_ir(ir_url):
     try:
-        res = requests.get(ir_url, timeout=10)
+        res = requests.get(url, timeout=10)
         soup = BeautifulSoup(res.text, "html.parser")
-
-        link = soup.select_one(
-            "a[href$='.pdf'], a[href*='pdf'], a[href*='news'], a[href*='release']"
-        )
-
+        link = soup.select_one("li.b_algo h2 a")
         if link:
-            href = link.get("href")
-            absolute_url = urljoin(ir_url, href)
-            return {
-                "title": link.text.strip(),
-                "url": absolute_url
-            }
+            return link.get("href")
+    except:
+        return None
 
-    except Exception as e:
-        print("Error:", e)
+df = pd.read_csv("nikkei225.csv")  # あなたのCSV
+df["ir_url"] = ""
 
-    return None
+for i, row in df.iterrows():
+    name = row["name"]
+    print(f"検索中: {name}")
+    url = find_ir_url(name)
+    df.at[i, "ir_url"] = url if url else ""
 
-@app.route("/ir/latest")
-def latest_ir():
-    results = []
+df.to_csv("nikkei225_ir_urls.csv", index=False)
+print("完成: nikkei225_ir_urls.csv")
 
-    for code, info in IR_URLS.items():
-        ir_info = fetch_latest_ir(info["ir_url"])
-        if ir_info:
-            results.append({
-                "code": code,
-                "name": info["name"],
-                "title": ir_info["title"],
-                "url": ir_info["url"]
-            })
-
-    if not results:
-        return jsonify({"error": "IR情報が取得できませんでした"})
-
-    return jsonify(results)
-
-@app.route("/")
-def home():
-    return "Nikkei225 IR server is running"
-
-if __name__ == "__main__":
-    port = int(os.environ.get("PORT", 5000))
-    app.run(host="0.0.0.0", port=port)
